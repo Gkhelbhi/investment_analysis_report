@@ -3,7 +3,7 @@
 
 Key Features:
 
-Executive overview with main statistics at a glance
+* Executive overview with main statistics at a glance
 Clear findings highlighting the most important insights
 Investment behavior patterns explained in simple terms
 Strategic recommendations organized by target audience
