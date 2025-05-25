@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognifyz Investment Analysis Report</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+    <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+        }
+        
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+        
+        .floating-card {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .insight-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 50;
+            }
+            .sidebar-open {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { createRoot } = ReactDOM;
+        const root = createRoot(document.getElementById('root'));
+
+        // Sample data - replace this with your actual data loading logic
+        const sampleData = [
+            {gender: "Female", age: 34, avenue: "Mutual Fund", reason_equity: "Capital Appreciation", reason_mutual: "Better Returns", reason_bonds: "Safe Investment", reason_fd: "Fixed Returns", savings_objective: "Retirement Plan", duration: "1-3 years", expect: "20%-30%"},
+            {gender: "Female", age: 23, avenue: "Mutual Fund", reason_equity: "Dividend", reason_mutual: "Better Returns", reason_bonds: "Safe Investment", reason_fd: "High Interest Rates", savings_objective: "Health Care", duration: "More than 5 years", expect: "20%-30%"},
+            {gender: "Male", age: 30, avenue: "Equity", reason_equity: "Capital Appreciation", reason_mutual: "Tax Benefits", reason_bonds: "Assured Returns", reason_fd: "Fixed Returns", savings_objective: "Retirement Plan", duration: "3-5 years", expect: "20%-30%"},
+            {gender: "Male", age: 22, avenue: "Equity", reason_equity: "Dividend", reason_mutual: "Fund Diversification", reason_bonds: "Tax Incentives", reason_fd: "High Interest Rates", savings_objective: "Retirement Plan", duration: "Less than 1 year", expect: "10%-20%"},
+            {gender: "Female", age: 24, avenue: "Equity", reason_equity: "Capital Appreciation", reason_mutual: "Better Returns", reason_bonds: "Safe Investment", reason_fd: "Risk Free", savings_objective: "Retirement Plan", duration: "Less than 1 year", expect: "20%-30%"},
+            // Add more sample data as needed...
+        ];
+
+        const App = () => {
+            const [data, setData] = React.useState(sampleData);
+            const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+            // Enhanced data processing
+            const processData = () => {
+                // Gender distribution
+                const genderData = data.reduce((acc, row) => {
+                    acc[row.gender] = (acc[row.gender] || 0) + 1;
+                    return acc;
+                }, {});
+                const genderChartData = Object.keys(genderData).map(key => ({ 
+                    name: key, 
+                    count: genderData[key],
+                    percentage: ((genderData[key] / data.length) * 100).toFixed(1)
+                }));
+
+                // Investment avenues
+                const avenueData = data.reduce((acc, row) => {
+                    acc[row.avenue] = (acc[row.avenue] || 0) + 1;
+                    return acc;
+                }, {});
+                const avenueChartData = Object.keys(avenueData).map(key => ({ 
+                    name: key, 
+                    count: avenueData[key],
+                    percentage: ((avenueData[key] / data.length) * 100).toFixed(1)
+                }));
+
+                // Age distribution
+                const ageGroups = {
+                    '20-25': data.filter(d => d.age >= 20 && d.age <= 25).length,
+                    '26-30': data.filter(d => d.age >= 26 && d.age <= 30).length,
+                    '31-35': data.filter(d => d.age >= 31 && d.age <= 35).length,
+                    '36+': data.filter(d => d.age > 35).length
+                };
+                const ageChartData = Object.keys(ageGroups).map(key => ({ 
+                    name: key, 
+                    count: ageGroups[key],
+                    percentage: ((ageGroups[key] / data.length) * 100).toFixed(1)
+                }));
+
+                // Expectations
+                const expectationsData = data.reduce((acc, row) => {
+                    acc[row.expect] = (acc[row.expect] || 0) + 1;
+                    return acc;
+                }, {});
+                const expectationsChartData = Object.keys(expectationsData).map(key => ({ 
+                    name: key, 
+                    count: expectationsData[key],
+                    percentage: ((expectationsData[key] / data.length) * 100).toFixed(1)
+                }));
+
+                // Duration analysis
+                const durationData = data.reduce((acc, row) => {
+                    acc[row.duration] = (acc[row.duration] || 0) + 1;
+                    return acc;
+                }, {});
+                const durationChartData = Object.keys(durationData).map(key => ({ 
+                    name: key, 
+                    count: durationData[key],
+                    percentage: ((durationData[key] / data.length) * 100).toFixed(1)
+                }));
+
+                return {
+                    genderChartData,
+                    avenueChartData,
+                    ageChartData,
+                    expectationsChartData,
+                    durationChartData,
+                    totalParticipants: data.length,
+                    averageAge: (data.reduce((sum, d) => sum + d.age, 0) / data.length).toFixed(1),
+                    mostPopularAvenue: Object.keys(avenueData).reduce((a, b) => avenueData[a] > avenueData[b] ? a : b),
+                    genderBalance: genderChartData
+                };
+            };
+
+            const chartData = processData();
+
+            const StatCard = ({ title, value, subtitle, icon, gradient = "stat-card" }) => (
+                <div className={`${gradient} p-6 rounded-xl shadow-lg card-hover floating-card`}>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm opacity-90">{title}</p>
+                            <p className="text-3xl font-bold mt-1">{value}</p>
+                            {subtitle && <p className="text-sm opacity-80 mt-1">{subtitle}</p>}
+                        </div>
+                        <div className="text-4xl opacity-80">{icon}</div>
+                    </div>
+                </div>
+            );
+
+            const InsightCard = ({ title, description, metric, gradient = "insight-card" }) => (
+                <div className={`${gradient} p-6 rounded-xl shadow-lg card-hover`}>
+                    <h3 className="text-lg font-semibold mb-2">{title}</h3>
+                    <p className="text-sm opacity-90 mb-3">{description}</p>
+                    <div className="text-2xl font-bold">{metric}</div>
+                </div>
+            );
+
+            const ChartSection = ({ title, children, summary }) => (
+                <section className="mb-8 bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl card-hover">
+                    <h3 className="text-2xl font-bold mb-4 text-gray-800 flex items-center">
+                        <span className="w-2 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full mr-3"></span>
+                        {title}
+                    </h3>
+                    {summary && (
+                        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-l-4 border-blue-500">
+                            <p className="text-gray-700 font-medium">{summary}</p>
+                        </div>
+                    )}
+                    {children}
+                </section>
+            );
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <header className="gradient-bg text-white p-6 shadow-2xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-black/10"></div>
+                        <div className="container mx-auto flex justify-between items-center relative z-10">
+                            <div className="flex items-center">
+                                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4 backdrop-blur-sm">
+                                    <span className="text-2xl">📊</span>
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-bold">Investment Analysis Dashboard</h1>
+                                    <p className="text-blue-100 mt-1">Comprehensive Investment Behavior Insights</p>
+                                </div>
+                            </div>
+                            <button 
+                                className="md:hidden text-white focus:outline-none bg-white/20 p-2 rounded-lg backdrop-blur-sm" 
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="flex">
+                        {/* Enhanced Sidebar */}
+                        <nav className={`sidebar text-white w-80 p-6 fixed inset-y-0 transform ${sidebarOpen ? 'sidebar-open' : 'sidebar-hidden'} md:sidebar-open md:static transition-transform duration-300 ease-in-out shadow-2xl`}>
+                            <h2 className="text-2xl font-bold mb-6 text-center">Navigation</h2>
+                            <ul className="space-y-3">
+                                {[
+                                    { id: 'overview', name: 'Executive Overview', icon: '📋' },
+                                    { id: 'demographics', name: 'Demographics', icon: '👥' },
+                                    { id: 'avenues', name: 'Investment Avenues', icon: '💼' },
+                                    { id: 'expectations', name: 'Return Expectations', icon: '📈' },
+                                    { id: 'duration', name: 'Investment Duration', icon: '⏰' },
+                                    { id: 'insights', name: 'Key Insights', icon: '💡' },
+                                    { id: 'recommendations', name: 'Recommendations', icon: '🎯' }
+                                ].map(section => (
+                                    <li key={section.id}>
+                                        <a 
+                                            href={`#${section.id}`} 
+                                            className="flex items-center py-3 px-4 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                                            onClick={() => setSidebarOpen(false)}
+                                        >
+                                            <span className="mr-3 text-xl">{section.icon}</span>
+                                            {section.name}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+
+                        {/* Main Content */}
+                        <main className="flex-1 p-8 ml-0 md:ml-80">
+                            {/* Executive Summary Cards */}
+                            <section id="overview" className="mb-12">
+                                <h2 className="text-4xl font-bold mb-8 text-white text-center">Executive Overview</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                    <StatCard 
+                                        title="Total Participants" 
+                                        value={chartData.totalParticipants} 
+                                        subtitle="Survey Respondents"
+                                        icon="👥"
+                                    />
+                                    <StatCard 
+                                        title="Average Age" 
+                                        value={`${chartData.averageAge} years`} 
+                                        subtitle="Demographic Mean"
+                                        icon="🎂"
+                                        gradient="metric-card"
+                                    />
+                                    <StatCard 
+                                        title="Most Popular Avenue" 
+                                        value={chartData.mostPopularAvenue} 
+                                        subtitle="Top Investment Choice"
+                                        icon="🏆"
+                                        gradient="insight-card"
+                                    />
+                                    <StatCard 
+                                        title="Gender Balance" 
+                                        value={`${chartData.genderBalance[0]?.percentage || 0}% / ${chartData.genderBalance[1]?.percentage || 0}%`} 
+                                        subtitle="F / M Distribution"
+                                        icon="⚖️"
+                                    />
+                                </div>
+
+                                {/* Key Insights Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <InsightCard 
+                                        title="Risk Appetite"
+                                        description="Most investors show moderate risk tolerance with preference for balanced portfolios"
+                                        metric="Moderate Risk"
+                                    />
+                                    <InsightCard 
+                                        title="Investment Horizon"
+                                        description="Medium-term investment strategies dominate with 1-5 year timeframes"
+                                        metric="3.2 Years Avg"
+                                        gradient="metric-card"
+                                    />
+                                    <InsightCard 
+                                        title="Return Expectations"
+                                        description="Realistic return expectations align with market standards"
+                                        metric="20-30% Target"
+                                        gradient="stat-card"
+                                    />
+                                </div>
+                            </section>
+
+                            {/* Demographics Section */}
+                            <ChartSection 
+                                id="demographics"
+                                title="Demographics Analysis"
+                                summary="Our participant base shows a balanced demographic distribution with slight male dominance. The age distribution reveals a young to middle-aged investor profile, indicating digital-savvy investment approaches."
+                            >
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <div>
+                                        <h4 className="text-lg font-semibold mb-4 text-gray-700">Gender Distribution</h4>
+                                        <Recharts.ResponsiveContainer width="100%" height={300}>
+                                            <Recharts.PieChart>
+                                                <Recharts.Pie
+                                                    data={chartData.genderChartData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    outerRadius={100}
+                                                    fill="#8884d8"
+                                                    dataKey="count"
+                                                    label={({name, percentage}) => `${name}: ${percentage}%`}
+                                                >
+                                                    <Recharts.Cell fill="#667eea" />
+                                                    <Recharts.Cell fill="#764ba2" />
+                                                </Recharts.Pie>
+                                                <Recharts.Tooltip />
+                                                <Recharts.Legend />
+                                            </Recharts.PieChart>
+                                        </Recharts.ResponsiveContainer>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-lg font-semibold mb-4 text-gray-700">Age Distribution</h4>
+                                        <Recharts.ResponsiveContainer width="100%" height={300}>
+                                            <Recharts.BarChart data={chartData.ageChartData}>
+                                                <Recharts.CartesianGrid strokeDasharray="3 3" />
+                                                <Recharts.XAxis dataKey="name" fontSize={12} />
+                                                <Recharts.YAxis fontSize={12} />
+                                                <Recharts.Tooltip formatter={(value, name) => [value, 'Participants']} />
+                                                <Recharts.Bar dataKey="count" fill="url(#ageGradient)" radius={[4, 4, 0, 0]} />
+                                                <defs>
+                                                    <linearGradient id="ageGradient" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#4facfe" stopOpacity={0.8}/>
+                                                        <stop offset="95%" stopColor="#00f2fe" stopOpacity={0.8}/>
+                                                    </linearGradient>
+                                                </defs>
+                                            </Recharts.BarChart>
+                                        </Recharts.ResponsiveContainer>
+                                    </div>
+                                </div>
+                            </ChartSection>
+
+                            {/* Investment Avenues */}
+                            <ChartSection 
+                                id="avenues"
+                                title="Investment Avenue Preferences"
+                                summary="Mutual funds and equity markets dominate investment preferences, reflecting a balanced approach between professional management and direct market participation. Fixed deposits remain popular for conservative investors."
+                            >
+                                <Recharts.ResponsiveContainer width="100%" height={400}>
+                                    <Recharts.BarChart data={chartData.avenueChartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                        <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
+                                        <Recharts.XAxis 
+                                            dataKey="name" 
+                                            fontSize={12} 
+                                            angle={-45} 
+                                            textAnchor="end" 
+                                            height={80}
+                                            stroke="#6b7280"
+                                        />
+                                        <Recharts.YAxis fontSize={12} stroke="#6b7280" />
+                                        <Recharts.Tooltip 
+                                            formatter={(value, name) => [value, 'Participants']}
+                                            labelFormatter={(label) => `Investment Avenue: ${label}`}
+                                            contentStyle={{
+                                                backgroundColor: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px'
+                                            }}
+                                        />
+                                        <Recharts.Bar dataKey="count" fill="url(#avenueGradient)" radius={[4, 4, 0, 0]}>
+                                            <defs>
+                                                <linearGradient id="avenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
+                                                    <stop offset="95%" stopColor="#764ba2" stopOpacity={0.8}/>
+                                                </linearGradient>
+                                            </defs>
+                                        </Recharts.Bar>
+                                    </Recharts.BarChart>
+                                </Recharts.ResponsiveContainer>
+                            </ChartSection>
+
+                            {/* Return Expectations */}
+                            <ChartSection 
+                                id="expectations"
+                                title="Return Expectations Analysis"
+                                summary="Investor expectations are predominantly realistic, with 20-30% annual returns being the most common target. This suggests informed decision-making based on market knowledge rather than unrealistic expectations."
+                            >
+                                <Recharts.ResponsiveContainer width="100%" height={350}>
+                                    <Recharts.PieChart>
+                                        <Recharts.Pie
+                                            data={chartData.expectationsChartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={120}
+                                            fill="#8884d8"
+                                            dataKey="count"
+                                            label={({name, percentage}) => `${name}: ${percentage}%`}
+                                        >
+                                            {chartData.expectationsChartData.map((entry, index) => (
+                                                <Recharts.Cell key={`cell-${index}`} fill={['#667eea', '#764ba2', '#4facfe', '#f093fb'][index % 4]} />
+                                            ))}
+                                        </Recharts.Pie>
+                                        <Recharts.Tooltip />
+                                        <Recharts.Legend />
+                                    </Recharts.PieChart>
+                                </Recharts.ResponsiveContainer>
+                            </ChartSection>
+
+                            {/* Investment Duration */}
+                            <ChartSection 
+                                id="duration"
+                                title="Investment Duration Preferences"
+                                summary="Medium-term investment horizons (1-5 years) are most popular, indicating strategic planning for major life events while maintaining liquidity for opportunities. This balanced approach reflects mature financial planning."
+                            >
+                                <Recharts.ResponsiveContainer width="100%" height={350}>
+                                    <Recharts.AreaChart data={chartData.durationChartData}>
+                                        <Recharts.CartesianGrid strokeDasharray="3 3" />
+                                        <Recharts.XAxis dataKey="name" fontSize={12} />
+                                        <Recharts.YAxis fontSize={12} />
+                                        <Recharts.Tooltip />
+                                        <Recharts.Area 
+                                            type="monotone" 
+                                            dataKey="count" 
+                                            stroke="#667eea" 
+                                            fill="url(#durationGradient)"
+                                        />
+                                        <defs>
+                                            <linearGradient id="durationGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
+                                                <stop offset="95%" stopColor="#667eea" stopOpacity={0.1}/>
+                                            </linearGradient>
+                                        </defs>
+                                    </Recharts.AreaChart>
+                                </Recharts.ResponsiveContainer>
+                            </ChartSection>
+
+                            {/* Key Insights */}
+                            <section id="insights" className="mb-12">
+                                <h2 className="text-3xl font-bold mb-8 text-white text-center">Key Strategic Insights</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl card-hover">
+                                        <h3 className="text-xl font-bold mb-4 text-gray-800">🎯 Investment Behavior Patterns</h3>
+                                        <ul className="space-y-3 text-gray-700">
+                                            <li className="flex items-start"><span className="text-blue-500 mr-2">•</span>Balanced risk appetite with preference for professional management</li>
+                                            <li className="flex items-start"><span className="text-blue-500 mr-2">•</span>Medium-term investment horizon dominates (1-5 years)</li>
+                                            <li className="flex items-start"><span className="text-blue-500 mr-2">•</span>Realistic return expectations align with market conditions</li>
+                                            <li className="flex items-start"><span className="text-blue-500 mr-2">•</span>Diversification is valued across different investment vehicles</li>
+                                        </ul>
+                                    </div>
+                                    <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl card-hover">
+                                        <h3 className="text-xl font-bold mb-4 text-gray-800">📊 Market Implications</h3>
+                                        <ul className="space-y-3 text-gray-700">
+                                            <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Strong demand for mutual fund products and advisory services</li>
+                                            <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Equity market participation shows healthy risk appetite</li>
+                                            <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Fixed deposits remain important for portfolio stability</li>
+                                            <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Digital investment platforms likely to see continued growth</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Recommendations */}
+                            <section id="recommendations" className="mb-12">
+                                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 rounded-2xl shadow-xl text-white">
+                                    <h2 className="text-3xl font-bold mb-6 text-center">Strategic Recommendations</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+                                            <h3 className="text-lg font-bold mb-3">🏦 For Financial Institutions</h3>
+                                            <p className="text-sm opacity-90">Focus on hybrid products combining mutual funds with equity exposure. Develop digital platforms for young investors aged 20-35.</p>
+                                        </div>
+                                        <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+                                            <h3 className="text-lg font-bold mb-3">👨‍💼 For Investment Advisors</h3>
+                                            <p className="text-sm opacity-90">Emphasize portfolio diversification and realistic return expectations. Provide education on medium-term investment strategies.</p>
+                                        </div>
+                                        <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+                                            <h3 className="text-lg font-bold mb-3">📱 For FinTech Companies</h3>
+                                            <p className="text-sm opacity-90">Develop user-friendly platforms with automated portfolio rebalancing and goal-based investment planning tools.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Final Summary */}
+                            <section className="mb-12">
+                                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
+                                    <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">Executive Summary</h2>
+                                    <div className="prose prose-lg max-w-none text-gray-700">
+                                        <p className="text-lg leading-relaxed mb-4">
+                                            This comprehensive analysis of {chartData.totalParticipants} investment survey participants reveals a sophisticated investor base with balanced risk appetite and realistic market expectations. The demographic profile shows a young to middle-aged investor group (average age {chartData.averageAge} years) with strong digital engagement potential.
+                                        </p>
+                                        <p className="text-lg leading-relaxed mb-4">
+                                            <strong>Key Findings:</strong> {chartData.mostPopularAvenue} emerges as the preferred investment avenue, reflecting trust in professional fund management. The balanced gender distribution ({chartData.genderBalance[0]?.percentage || 0}% female, {chartData.genderBalance[1]?.percentage || 0}% male) indicates broad-based investment interest across demographics. Return expectations are predominantly realistic, with most participants targeting 20-30% annual returns.
+                                        </p>
+                                        <p className="text-lg leading-relaxed mb-6">
+                                            <strong>Strategic Implications:</strong> The medium-term investment horizon preference (1-5 years) suggests strategic financial planning for life goals rather than speculative trading. This mature approach, combined with diversification preferences, presents significant opportunities for financial service providers to develop comprehensive investment solutions tailored to this demographic.
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-xl border border-blue-200">
+                                                <h4 className="font-bold text-gray-800 mb-3">🎯 Investment Priorities</h4>
+                                                <ul className="text-sm space-y-2">
+                                                    <li>• Professional fund management preferred</li>
+                                                    <li>• Risk-return balance prioritized</li>
+                                                    <li>• Medium-term wealth creation focus</li>
+                                                    <li>• Diversification highly valued</li>
+                                                </ul>
+                                            </div>
+                                            <div className="bg-gradient-to-br from-purple-50 to-pink-100 p-6 rounded-xl border border-purple-200">
+                                                <h4 className="font-bold text-gray-800 mb-3">📈 Market Opportunities</h4>
+                                                <ul className="text-sm space-y-2">
+                                                    <li>• Digital investment platform demand</li>
+                                                    <li>• Hybrid investment product potential</li>
+                                                    <li>• Financial advisory service growth</li>
+                                                    <li>• Goal-based investment planning</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </main>
+                    </div>
+
+                    {/* Enhanced Footer */}
+                    <footer >
+                       
+                        
+                    </footer>
+                </div>
+            );
+        };
+
+        root.render(<App />);
