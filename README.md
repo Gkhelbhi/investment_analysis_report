@@ -1,7 +1,7 @@
 # investment_analysis_report
 
 
-Key Features:
+## Key Features:
 
 * Executive overview with main statistics at a glance
 * Clear findings highlighting the most important insights
@@ -9,7 +9,7 @@ Key Features:
 * Strategic recommendations organized by target audience
 * Market implications for decision-making
 
-Main Takeaways from the Analysis:
+## Main Takeaways from the Analysis:
 
 * 5 participants, average age 26.6 years
 * 60% female, 40% male distribution
